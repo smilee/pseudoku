@@ -86,7 +86,7 @@ function colsFromGrids(puzzle) {
 }
 
 function generateRandomNumber(min, max) {
-  return Math.floor(Math.random() * max) + min;
+  return Math.floor(Math.random() * (max - min)) + min;
 }
 
 function permuteToMeetConditions(puzzle) {
@@ -110,28 +110,31 @@ function makeSolution(row) {
   return permuteToMeetConditions(puzzle);
 }
 
-// This is a helper function for solving the problem below.
-function checkDuplicates(list, item) {
-  return list.reduce((prev, curr) => (prev[0] === item[0] && prev[1] === item[1])
-  || (curr[0] === item[0] && curr[1] === item[1]));
-}
-
 // The problem with this function is that it can try to empty a position previously emptied out.
 function emptyCells(puzzle, n) { // n is the number of empty cells
   const unsolvedPuzzle = puzzle.slice();
 
-  new Array(n).fill(null).map((c, i) => i).forEach(() => {
-    let row = generateRandomNumber(0, 3);
-    let col = generateRandomNumber(0, 3);
+  // Code added to solve duplicate problem
+  function checkDuplicates({ row, col }) {
+    return unsolvedPuzzle[row][col] === '';
+  }
 
-    // Code added to solve duplicate problem
-    while (checkDuplicates(unsolvedPuzzle, [row, col])) {
-      row = generateRandomNumber(0, 3);
-      col = generateRandomNumber(0, 3);
-    }
+  function pickRandomCell() {
+    const cell = {
+      row: generateRandomNumber(0, 4),
+      col: generateRandomNumber(0, 4),
+    };
+
+    return checkDuplicates(cell) ? pickRandomCell() : cell;
+  }
+
+  new Array(n).fill(null).map((c, i) => i).forEach(() => {
+    const { row, col } = pickRandomCell();
 
     unsolvedPuzzle[row][col] = '';
   });
+
+  log(unsolvedPuzzle);
 
   return unsolvedPuzzle;
 }
@@ -285,11 +288,5 @@ describe('emptyCells', () => {
         [2, 3, 4, 1],
       ], 10,
     ).length).toEqual(4);
-  });
-});
-
-describe('checkDuplicates', () => {
-  it('should return true when a duplicate is found', () => {
-    expect(checkDuplicates([[2, 1], [0, 2]], [2, 1])).toBe(true);
   });
 });
