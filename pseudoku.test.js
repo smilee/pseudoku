@@ -33,12 +33,24 @@ test('candidate', () => {
     column: 1,
   })).toBe(2);
 
-  // expect(candidate({
-  //   grid: updateGrid(grid, { row: 0, column: 0, value: 1 }),
-  //   numbers,
-  //   row: 3,
-  //   column: 3,
-  // })).toBe(1);
+  expect(candidate({
+    grid: updateGrid(grid, { row: 0, column: 0, value: 1 }),
+    numbers,
+    row: 3,
+    column: 3,
+  })).toBe(1);
+
+  expect(candidate({
+    grid: [
+      [1, 2, 3, 0],
+      [3, 4, 1, 2],
+      [2, 1, 4, 3],
+      [0, 3, 2, 0],
+    ],
+    numbers,
+    row: 3,
+    column: 0,
+  })).toBe(4);
 });
 
 test('createGrid', () => {
