@@ -5,15 +5,22 @@ module.exports = {
     jest: true,
   },
   extends: [
-    'airbnb-base',
+    'plugin:react/recommended',
+    'airbnb',
   ],
   globals: {
     context: true,
   },
   parserOptions: {
+    ecmaFeatures: {
+      jsx: true,
+    },
     ecmaVersion: 12,
     sourceType: 'module',
   },
+  plugins: [
+    'react',
+  ],
   rules: {
     indent: ['error', 2],
     'no-trailing-spaces': 'error',
@@ -35,6 +42,8 @@ module.exports = {
     'object-curly-spacing': ['error', 'always'],
     'key-spacing': ['error', { mode: 'strict' }],
     'arrow-spacing': ['error', { before: true, after: true }],
+    'react/prop-types': 'off',
+    'jsx-a11y/label-has-associated-control': ['error', { assert: 'either' }],
     'no-unused-vars': ['error', { varsIgnorePattern: 'jsx' }],
   },
 };
