@@ -75,12 +75,16 @@ function getNeighbors({ grid, coordinates }) {
   const neighboringRows = sectionRow
     .filter((_, i) => i !== row % chunks)
     .map((xs) => (
-      chunk({ array: xs, chunks }).filter((_, j) => j !== row % chunks)));
-  const sectionColumn = chunkGrid({ grid, chunks }).map((xs) => (
-    xs.map((x) => x[column % chunks])
-  ));
-  const neighboringColumns = sectionColumn.filter((_, i) => i !== row % chunks)
-    .map((xs) => xs.map((x) => x.filter((_, j) => j !== column % chunks)));
+      chunk({ array: xs, chunks }).filter((_, j) => j !== Math.floor(column / chunks))));
+  const sectionColumn = grid
+    .map((xs) => chunk({ array: xs, chunks }))
+    .map((rs) => rs[Math.floor(column / chunks)]);
+  const neighboringColumns = chunk({
+    array: sectionColumn
+      .map((rs) => rs.filter((_, i) => i !== column % chunks)),
+    chunks,
+  }).filter((_, i) => i !== Math.floor(row / chunks));
+
   const neighboringNumbers = [
     ...neighboringRows,
     ...neighboringColumns,
@@ -90,10 +94,14 @@ function getNeighbors({ grid, coordinates }) {
 }
 
 function weighCandidates({ grid, coordinates }) {
+  if (grid[coordinates.row][coordinates.column] > 0) {
+    return { 0: [] };
+  }
+
   const numbers = getNumbers(grid);
   const candidates = getCandidates({ grid, coordinates });
   const neighboringNumbers = getNeighbors({ grid, coordinates });
-  const neighborOccurances = neighboringNumbers
+  const occurances = neighboringNumbers
     .filter((number) => number > 0)
     .reduce((count, number) => {
       if (count[number]) {
@@ -110,7 +118,7 @@ function weighCandidates({ grid, coordinates }) {
   const zeros = numbers
     .filter((num) => !neighboringNumbers.includes(num))
     .filter((num) => candidates.includes(num));
-  const weights = Object.entries(neighborOccurances)
+  const weights = Object.entries(occurances)
     .filter((entry) => candidates.includes(Number(entry[0])))
     .reduce((counts, [number, count]) => ({
       ...counts,
@@ -120,6 +128,39 @@ function weighCandidates({ grid, coordinates }) {
     });
 
   return weights;
+}
+
+function getGreatestWeights(sudoku) {
+  const greatestWeightGrid = sudoku.map((xs, i) => xs.map((x, j) => {
+    if (x > 0) {
+      return 0;
+    }
+    const weights = weighCandidates({ grid: sudoku, coordinates: { row: i, column: j } });
+
+    return {
+      weight: Number(
+        Object.keys(weights).sort((a, b) => b - a)[0],
+      ),
+      coordinates: { row: i, column: j },
+    };
+  }));
+
+  const greatestWeights = greatestWeightGrid
+    .flat().filter((value) => typeof value === 'object').reduce((weights, object) => {
+      if (weights[object.weight]) {
+        return {
+          ...weights,
+          [object.weight]: [...weights[object.weight], object.coordinates],
+        };
+      }
+
+      return {
+        ...weights,
+        [object.weight]: [object.coordinates],
+      };
+    }, {});
+
+  return greatestWeights;
 }
 
 function checkConditions(grid) {
@@ -139,7 +180,7 @@ function checkConditions(grid) {
   return conditionsMet;
 }
 
-function sudoku(size) {
+function generateSudoku(size) {
   const solution = Array(size).fill().reduce((grid, _, i) => grid.reduce((g, __, j) => {
     const candidates = weighCandidates({ grid: g, coordinates: { row: i, column: j } });
     const values = candidates[Object.keys(candidates).sort((a, b) => b - a)[0]];
@@ -150,11 +191,51 @@ function sudoku(size) {
     });
   }, grid), createGrid(size));
 
-  return !checkConditions(solution) ? sudoku(size) : solution;
+  return !checkConditions(solution) ? generateSudoku(size) : solution;
+}
+
+function generateRandomInteger(min, max) {
+  return Math.floor(Math.random() * (max - min) + min);
+}
+
+function generatePuzzle(sudoku) {
+  // sudoku.flat()
+  const emptyCellIndices = new Set();
+  while (emptyCellIndices.size < 45) { // 64
+    emptyCellIndices.add(generateRandomInteger(0, 80));
+  }
+  const puzzle = chunk({
+    array: sudoku.flat()
+      .map((cell, i) => (Array.from(emptyCellIndices).includes(i) ? 0 : cell)),
+    chunks: sudoku.length,
+  });
+
+  return puzzle;
+}
+
+function solveSudoku(sudoku) {
+  const weights = getGreatestWeights(sudoku);
+  const orderByGreatestWeights = Object.keys(weights).sort((a, b) => b - a);
+
+  const solution = orderByGreatestWeights
+    .reduce((grid, weight) => weights[weight].reduce((g, pair) => {
+      const candidates = weighCandidates({
+        grid: g,
+        coordinates: { row: pair.row, column: pair.column },
+      });
+      const values = candidates[Object.keys(candidates).sort((a, b) => b - a)[0]];
+
+      return updateGrid({
+        grid: g,
+        coordinates: { row: pair.row, column: pair.column },
+        value: values[Math.floor(Math.random() * values.length)] || 0,
+      });
+    }, grid), sudoku);
+
+  return !checkConditions(solution) ? solveSudoku(sudoku) : solution;
 }
 
 module.exports = {
-  sudoku,
   createGrid,
   updateGrid,
   getNumbers,
@@ -166,5 +247,10 @@ module.exports = {
   getCandidates,
   getNeighbors,
   weighCandidates,
+  getGreatestWeights,
   checkConditions,
+  generateSudoku,
+  generateRandomInteger,
+  generatePuzzle,
+  solveSudoku,
 };
