@@ -4,8 +4,9 @@
   "description": "A number puzzle",
   "main": "index.jsx",
   "scripts": {
-    "start": "webpack serve",
-    "test": "jest --watchAll"
+    "start": "webpack serve --mode=development",
+    "test": "jest --watchAll",
+    "build": "npx webpack --mode=production"
   },
   "devDependencies": {
     "@babel/core": "^7.13.0",

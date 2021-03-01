@@ -50,6 +50,9 @@ table {
 }
 
 /* global css */
+body {
+  min-width: fit-content;
+}
 
 * {
   font-family: 'Courier Prime', monospace;
