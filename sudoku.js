@@ -201,7 +201,7 @@ function generateRandomInteger(min, max) {
 function generatePuzzle(sudoku) {
   // sudoku.flat()
   const emptyCellIndices = new Set();
-  while (emptyCellIndices.size < 45) { // 64
+  while (emptyCellIndices.size < 40) { // 64
     emptyCellIndices.add(generateRandomInteger(0, 80));
   }
   const puzzle = chunk({
